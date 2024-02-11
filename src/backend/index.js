@@ -1,11 +1,13 @@
 const express = require('express')
 const multer = require('multer');
 const fs = require('fs');
+const cors = require('cors');
 const readline = require('readline');
 const { TokenInfo, Position, Sequence } = require('./entitites');
 const app = express()
 
 app.use(express.urlencoded({ extended: true }));
+
 
 
 function calculatePathReward(path, sequences) {
@@ -146,6 +148,7 @@ app.post("/solveFile", upload.single('file'), async (req, res) => {
         // Respond with the results
         res.json({
             message: "File processed successfully",
+            data: data,
             maxReward: maxRewardObject.max,
             bestPath: bestPath.map(t => ({ value: t.value, pos: t.pos }))
         });
@@ -155,19 +158,72 @@ app.post("/solveFile", upload.single('file'), async (req, res) => {
     }
 });
 
-app.post('/solve', (req, res) => {
-    const { uniqueToken, token, bufferSize, matrixHeight, matrixWidth, sequenceSize, maxSequence } = req.body;
+app.post('/solve',upload.none(), (req, res) => {
+  console.log(req.body);
+  let { bufferSize ,token, matrixHeight, matrixWidth, sequenceSize, maxSequence } = req.body;
 
-    // Simple validation to check if all fields are provided
-    if (!uniqueToken || !token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence) {
-        return res.status(400).json({ message: "All fields are required" });
-    }
+  // Simple validation to check if all fields are provided
+  if (typeof token === 'string') {
+    token = token.split(' ');
+}
 
-    // Here, you would typically process the form data
-    console.log("Form data received:", req.body);
+// Simple validation to check if all fields are provided
+if (!token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence || token.length === 0) {
+    return res.status(400).json({ message: "All fields are required and token array cannot be empty" });
+}
 
-    // Sending a success response
-    res.status(200).json({ message: "Form processed successfully" });
+  // Initialize the data structure
+  let data = {
+      bufferSize: parseInt(bufferSize, 10),
+      matrixWidth: parseInt(matrixWidth, 10),
+      matrixHeight: parseInt(matrixHeight, 10),
+      matrix: [],
+      sequences: []
+  };
+  console.log(data)
+  // Generate the matrix
+  for (let i = 0; i < data.matrixHeight; ++i) {
+      data.matrix[i] = [];
+      for (let j = 0; j < data.matrixWidth; ++j) {
+          let tokenIndex = Math.floor(Math.random() * token.length); // Randomly select a token index
+          data.matrix[i][j] = token[tokenIndex]; // Assign the token to the matrix cell
+      }
+  }
+
+  // Generate sequences
+  for (let i = 0; i < sequenceSize; ++i) {
+      let randomSequenceSize = 2 + Math.floor(Math.random() * (maxSequence - 1)); // Random size between 2 and maxSequence
+      let sequenceTokens = [];
+      for (let j = 0; j < randomSequenceSize; ++j) {
+          let tokenIndex = Math.floor(Math.random() * token.length); // Randomly select a token index
+          sequenceTokens.push(token[tokenIndex]); // Add the token to the sequence
+      }
+      let reward = (Math.floor(Math.random() * 10) + 1) * 5; // Random reward between 5 and 50, in steps of 5
+      data.sequences.push({ tokens: sequenceTokens, reward: reward });
+  }
+
+  // Log generated data for debugging
+  const matrix = data.matrix;
+  const sequences = data.sequences.map(seq => new Sequence(seq.tokens, seq.reward));
+  const visited = Array.from({ length: data.matrixHeight }, () => Array(data.matrixWidth).fill(false));
+  const path = [];
+  const bestPath = [];
+  const maxRewardObject = { max: 0 };
+
+  // Choose an appropriate starting position based on your requirements
+  const startPos = new Position(0, 0); // Example starting position
+
+  // Call explorePaths with the read and prepared data
+  explorePaths(matrix, startPos, path, visited, data.bufferSize, true, sequences, maxRewardObject, bestPath);
+
+  console.log(data)
+  // Sending a success response with generated data
+  res.json({
+      message: "Matrix and sequences generated successfully",
+      data: data,
+      maxReward: maxRewardObject.max,
+      bestPath: bestPath.map(t => ({ value: t.value, pos: t.pos }))
+  });
 });
 
 app.listen(5000, () => {console.log("Server started on port 5000")})
