@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Firstpage from './components/firstpage'
 import Manual from './components/manual'
 import File from './components/file'
 function App() {
 
-  const [backendData, setBackendData] = useState([{}])
-
-
   return (
-    <div>
-      <File/>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Firstpage />} />
+        <Route path="/manual" element={<Manual />} />
+        <Route path="/file-upload" element={<File />} />
+      </Routes>
+    </Router>
   )
 }
 
