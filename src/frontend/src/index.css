@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.text-shadow {
+  text-shadow: 1px 1px 2px #d0ed57;
+}
+
+.border-shadow {
+  box-shadow: 0 2px 4px #d0ed57;
+}
+
+html {
+  background-color: #191119;
+}
