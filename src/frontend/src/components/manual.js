@@ -54,6 +54,40 @@ function Manual() {
   const handleResult = () => {
     setShowResult(false);
   }
+
+  const handleDownloadResult = () => {
+    if (!results || !results.bestPath) {
+      alert('No results to download');
+      return;
+    }
+    
+    // Construct the content for the text file
+    let content = `${results.maxReward}\n`;
+    content += results.bestPath.map(tokenInfo => tokenInfo.value).join(" ") + "\n";
+    results.bestPath.forEach((tokenInfo, index) => {
+      content += `${tokenInfo.pos.x + 1}, ${tokenInfo.pos.y + 1}\n`;
+    });
+    content += `\n${results.executionTime} ms\n`;
+
+    // Convert the content to a Blob object
+    const blob = new Blob([content], { type: 'text/plain' });
+
+    // Create a URL for the Blob object
+    const fileURL = URL.createObjectURL(blob);
+
+    // Create a temporary anchor element
+    const tempLink = document.createElement('a');
+    tempLink.href = fileURL;
+    tempLink.setAttribute('download', 'results.txt'); // Specify the filename for download
+    document.body.appendChild(tempLink); // Append to the body (required for Firefox)
+
+    // Programmatically click the anchor to trigger the download
+    tempLink.click();
+
+    // Clean up by removing the temporary link and revoking the Blob URL
+    document.body.removeChild(tempLink);
+    URL.revokeObjectURL(fileURL);
+  };
   return (
     <div className='w-screen h-screen flex flex-col items-center  text-[#d0ed57] '>
         <div className={`flex flex-col items-center w-full h-full ${showResult ? 'filter blur-sm' : ''}`}>
@@ -142,13 +176,17 @@ function Manual() {
             <div className='flex flex-col gap-3'>
               {results.bestPath.map((tokenInfo, index) => (
                 <div key={index}>
-                  {tokenInfo.pos.y + 1}, {tokenInfo.pos.x + 1}
+                  {tokenInfo.pos.x + 1}, {tokenInfo.pos.y + 1}
                 </div>
               ))}
             </div>
           </div>
-          <div>
-          <button onClick={handleResult} className="border-2 border-[#d0ed57] border-solid p-4 text-l font-sans font-semibold shadow-[5px_5px_0_0_rgba(208,237,87,1)] hover:bg-[#d0ed57] hover:bg-opacity-10 active:scale-95 transition duration-150 ease-in-out">Close</button>
+          <div className="my-5 w-2/3">
+            {results.executionTime} ms
+          </div>
+          <div className='flex flex-row w-2/3 justify-between'>
+            <button onClick={handleDownloadResult} className="border-2 border-[#d0ed57] border-solid p-4 text-l font-sans font-semibold shadow-[5px_5px_0_0_rgba(208,237,87,1)] hover:bg-[#d0ed57] hover:bg-opacity-10 active:scale-95 transition duration-150 ease-in-out">Download Result</button>
+            <button onClick={handleResult} className="border-2 border-[#d0ed57] border-solid p-4 text-l font-sans font-semibold shadow-[5px_5px_0_0_rgba(208,237,87,1)] hover:bg-[#d0ed57] hover:bg-opacity-10 active:scale-95 transition duration-150 ease-in-out">Close</button>
           </div>
         </div>
     )}
