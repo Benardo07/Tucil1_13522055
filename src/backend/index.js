@@ -124,105 +124,135 @@ async function readFromFile(filePath) {
   
 const upload = multer({ dest: 'uploads/' });
 app.post("/solveFile", upload.single('file'), async (req, res) => {
-    // You can access the uploaded file through req.file
-    if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded." });
-    }
+  if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded." });
+  }
 
-    try {
-        // Asynchronously read from the uploaded file and wait for the data
-        const data = await readFromFile(req.file.path);
-        const matrix = data.matrix;
-        const sequences = data.sequences.map(seq => new Sequence(seq.tokens, seq.reward));
-        const visited = Array.from({ length: data.matrixHeight }, () => Array(data.matrixWidth).fill(false));
-        const path = [];
-        const bestPath = [];
-        const maxRewardObject = { max: 0 };
+  try {
+      const startTime = Date.now();
+      const data = await readFromFile(req.file.path);
+      const matrix = data.matrix;
+      const sequences = data.sequences.map(seq => new Sequence(seq.tokens, seq.reward));
 
-        // Choose an appropriate starting position based on your requirements
-        const startPos = new Position(0, 0); // Example starting position
+      
+      let overallBestPath = [];
+      let maxOverallReward = 0;
 
-        // Call explorePaths with the read and prepared data
-        explorePaths(matrix, startPos, path, visited, data.bufferSize, true, sequences, maxRewardObject, bestPath);
+      // Loop through each column in the first row
+      for (let col = 0; col < data.matrixWidth; col++) {
+          const visited = Array.from({ length: data.matrixHeight }, () => Array(data.matrixWidth).fill(false));
+          const path = [];
+          const bestPath = [];
+          const maxRewardObject = { max: 0 };
+          const startPos = new Position(col, 0); // Starting position for this iteration
 
-        // Respond with the results
-        res.json({
-            message: "File processed successfully",
-            data: data,
-            maxReward: maxRewardObject.max,
-            bestPath: bestPath.map(t => ({ value: t.value, pos: t.pos }))
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Error processing file", error: error.message });
-    }
+          explorePaths(matrix, startPos, path, visited, data.bufferSize, true, sequences, maxRewardObject, bestPath);
+
+          // Compare and update overall best path and reward
+          if (maxRewardObject.max > maxOverallReward) {
+              maxOverallReward = maxRewardObject.max;
+              overallBestPath = bestPath.slice(); // Make a copy of the best path
+          }
+      }
+
+      const endTime = Date.now(); // End timing
+      const executionTime = endTime - startTime;
+
+      // Respond with the best results found among all starting positions
+      res.json({
+          message: "File processed successfully",
+          data: data,
+          maxReward: maxOverallReward,
+          bestPath: overallBestPath.map(t => ({ value: t.value, pos: t.pos })),
+          executionTime: executionTime
+      });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error processing file", error: error.message });
+  }
 });
 
-app.post('/solve',upload.none(), (req, res) => {
-  console.log(req.body);
-  let { bufferSize ,token, matrixHeight, matrixWidth, sequenceSize, maxSequence } = req.body;
+app.post('/solve',upload.none(), async (req, res) => {
+  let { token, bufferSize, matrixHeight, matrixWidth, sequenceSize, maxSequence } = req.body;
 
-  // Simple validation to check if all fields are provided
+  // Convert token to array if it's a string
   if (typeof token === 'string') {
     token = token.split(' ');
-}
+  }
 
-// Simple validation to check if all fields are provided
-if (!token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence || token.length === 0) {
+  // Validate input
+  if (!token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence || token.length === 0) {
     return res.status(400).json({ message: "All fields are required and token array cannot be empty" });
-}
+  }
 
-  // Initialize the data structure
+  // Parse numeric values from strings
+  bufferSize = parseInt(bufferSize, 10);
+  matrixWidth = parseInt(matrixWidth, 10);
+  matrixHeight = parseInt(matrixHeight, 10);
+  sequenceSize = parseInt(sequenceSize, 10);
+  maxSequence = parseInt(maxSequence, 10);
+
+  // Initialize data structure
   let data = {
-      bufferSize: parseInt(bufferSize, 10),
-      matrixWidth: parseInt(matrixWidth, 10),
-      matrixHeight: parseInt(matrixHeight, 10),
-      matrix: [],
-      sequences: []
+    bufferSize,
+    matrixWidth,
+    matrixHeight,
+    matrix: [],
+    sequences: []
   };
-  console.log(data)
+
   // Generate the matrix
-  for (let i = 0; i < data.matrixHeight; ++i) {
-      data.matrix[i] = [];
-      for (let j = 0; j < data.matrixWidth; ++j) {
-          let tokenIndex = Math.floor(Math.random() * token.length); // Randomly select a token index
-          data.matrix[i][j] = token[tokenIndex]; // Assign the token to the matrix cell
-      }
+  for (let i = 0; i < matrixHeight; ++i) {
+    let row = [];
+    for (let j = 0; j < matrixWidth; ++j) {
+      let tokenIndex = Math.floor(Math.random() * token.length);
+      row.push(token[tokenIndex]);
+    }
+    data.matrix.push(row);
   }
 
   // Generate sequences
   for (let i = 0; i < sequenceSize; ++i) {
-      let randomSequenceSize = 2 + Math.floor(Math.random() * (maxSequence - 1)); // Random size between 2 and maxSequence
-      let sequenceTokens = [];
-      for (let j = 0; j < randomSequenceSize; ++j) {
-          let tokenIndex = Math.floor(Math.random() * token.length); // Randomly select a token index
-          sequenceTokens.push(token[tokenIndex]); // Add the token to the sequence
-      }
-      let reward = (Math.floor(Math.random() * 10) + 1) * 5; // Random reward between 5 and 50, in steps of 5
-      data.sequences.push({ tokens: sequenceTokens, reward: reward });
+    let sequenceLength = 2 + Math.floor(Math.random() * (maxSequence - 1));
+    let sequenceTokens = [];
+    for (let j = 0; j < sequenceLength; ++j) {
+      let tokenIndex = Math.floor(Math.random() * token.length);
+      sequenceTokens.push(token[tokenIndex]);
+    }
+    let reward = (Math.floor(Math.random() * 10) + 1) * 5;
+    data.sequences.push({ tokens: sequenceTokens, reward });
   }
 
-  // Log generated data for debugging
-  const matrix = data.matrix;
-  const sequences = data.sequences.map(seq => new Sequence(seq.tokens, seq.reward));
-  const visited = Array.from({ length: data.matrixHeight }, () => Array(data.matrixWidth).fill(false));
-  const path = [];
-  const bestPath = [];
-  const maxRewardObject = { max: 0 };
+  // Find best path starting from each column in the first row
+  let bestOverallReward = 0;
+  let bestOverallPath = [];
+  const startTime = Date.now();
 
-  // Choose an appropriate starting position based on your requirements
-  const startPos = new Position(0, 0); // Example starting position
+  for (let col = 0; col < matrixWidth; ++col) {
+    const startPos = new Position(col, 0);
+    const visited = Array.from({ length: matrixHeight }, () => Array(matrixWidth).fill(false));
+    const path = [];
+    const bestPath = [];
+    const maxRewardObject = { max: 0 };
 
-  // Call explorePaths with the read and prepared data
-  explorePaths(matrix, startPos, path, visited, data.bufferSize, true, sequences, maxRewardObject, bestPath);
+    explorePaths(data.matrix, startPos, path, visited, bufferSize, true, data.sequences, maxRewardObject, bestPath);
 
-  console.log(data)
-  // Sending a success response with generated data
+    if (maxRewardObject.max > bestOverallReward) {
+      bestOverallReward = maxRewardObject.max;
+      bestOverallPath = bestPath.slice(); // Make a copy of the best path
+    }
+  }
+
+  const endTime = Date.now();
+  const executionTime = endTime - startTime;
+
+  // Send response
   res.json({
-      message: "Matrix and sequences generated successfully",
-      data: data,
-      maxReward: maxRewardObject.max,
-      bestPath: bestPath.map(t => ({ value: t.value, pos: t.pos }))
+    message: "Matrix and sequences generated successfully",
+    data,
+    maxReward: bestOverallReward,
+    bestPath: bestOverallPath.map(t => ({ value: t.value, pos: t.pos })),
+    executionTime
   });
 });
 
