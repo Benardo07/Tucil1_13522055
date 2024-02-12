@@ -52,7 +52,7 @@ Terdapat 2 cara untuk menginput data:
 Setelah melakukan pengisian data dengan benar, anda dapat mengklik tombol **SOLVE** untuk mendapatkan hasil berupa solusi path yang optimal beserta dengan koordinat dan rewardnya
 
 ## Identitas Pembuat Program
-Nama: [Benardo]
-Nim : [13522055]
-Email: [13522055@stei.std.ac.id]
-GitHub: [Benardo07]
+Nama: [Benardo]  
+Nim : [13522055]  
+Email: [13522055@stei.std.ac.id]  
+GitHub: [Benardo07]  
