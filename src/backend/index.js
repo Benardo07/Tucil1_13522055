@@ -123,6 +123,7 @@ async function readFromFile(filePath) {
   }
   
 const upload = multer({ dest: 'uploads/' });
+
 app.post("/solveFile", upload.single('file'), async (req, res) => {
   if (!req.file) {
       return res.status(400).json({ message: "No file uploaded." });
@@ -173,24 +174,50 @@ app.post("/solveFile", upload.single('file'), async (req, res) => {
 });
 
 app.post('/solve',upload.none(), async (req, res) => {
-  let { token, bufferSize, matrixHeight, matrixWidth, sequenceSize, maxSequence } = req.body;
+  let {uniqueToken, token, bufferSize, matrixHeight, matrixWidth, sequenceSize, maxSequence } = req.body;
 
   // Convert token to array if it's a string
   if (typeof token === 'string') {
     token = token.split(' ');
   }
-
+  console.log(uniqueToken);
+  console.log(token);
   // Validate input
-  if (!token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence || token.length === 0) {
-    return res.status(400).json({ message: "All fields are required and token array cannot be empty" });
+  if (!uniqueToken || !token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence) {
+    return res.status(400).json({ message: "All fields are required" });
   }
 
-  // Parse numeric values from strings
   bufferSize = parseInt(bufferSize, 10);
   matrixWidth = parseInt(matrixWidth, 10);
   matrixHeight = parseInt(matrixHeight, 10);
   sequenceSize = parseInt(sequenceSize, 10);
   maxSequence = parseInt(maxSequence, 10);
+  uniqueToken = parseInt(uniqueToken,10);
+
+  if (isNaN(bufferSize) ||  bufferSize <= 0 ||
+      isNaN(matrixWidth) || matrixWidth <= 0 ||
+      isNaN(matrixHeight) || matrixHeight <= 0 ||
+      isNaN(sequenceSize) || sequenceSize <= 0 ||
+      isNaN(maxSequence) || maxSequence <= 0 ||
+      isNaN(uniqueToken) || uniqueToken <= 0) {
+    return res.status(400).json({ message: "Numeric fields must be greater than 0 " });
+  }
+  console.log(token.length);
+  if (token.length === 0 || token.length !== uniqueToken) {
+    return res.status(400).json({ message: "Token array size does not match the number of unique tokens specified" });
+  }
+  if (!token.every(t => typeof t === 'string' && t.length === 2)) {
+    return res.status(400).json({ message: "Each token must be a string containing exactly two characters" });
+  }
+  if (bufferSize < 2) {
+    return res.status(400).json({ message: "Buffer size must be at least 2" });
+  }
+  if (maxSequence < 2) {
+    return res.status(400).json({ message: "Max sequence size must be at least 2" });
+  }
+
+
+
 
   // Initialize data structure
   let data = {
