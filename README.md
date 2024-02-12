@@ -44,3 +44,15 @@ npm run dev
 Tampilan halaman pertama dari website akan seperti ini
 
 ![Alt text for the image](/src/frontend/public/tampilanPertama.png)
+
+Terdapat 2 cara untuk menginput data:
+- **Input Manual**: Pengguna dapat memasukkan data puzzle secara manual melalui form yang disediakan.
+- **Input Dari File**: Pengguna juga dapat mengupload file yang berisi data puzzle untuk diolah.
+
+Setelah melakukan pengisian data dengan benar, anda dapat mengklik tombol **SOLVE** untuk mendapatkan hasil berupa solusi path yang optimal beserta dengan koordinat dan rewardnya
+
+## Identitas Pembuat Program
+Nama: Benardo
+Nim : 13522055
+Email: 13522055@stei.std.ac.id
+GitHub: Benardo07
