@@ -2,7 +2,7 @@ import React ,{useState} from 'react'
 
 function Manual() {
 
-
+    const [isLoading, setIsLoading] = useState(false);
     const [showResult, setShowResult] = useState(false);
     const [results, setResults] = useState({});
 
@@ -11,7 +11,7 @@ function Manual() {
         event.preventDefault(); // Prevent default form submission behavior
 
         const formData = new FormData(event.target); // or new FormData(formRef.current)
-
+        setIsLoading(true);
         // Log FormData values for debugging
         for (let [key, value] of formData.entries()) {
             console.log(`${key}: ${value}`);
@@ -23,12 +23,20 @@ function Manual() {
                 body: formData,
               });
 
+              if (response.status === 400) {
+                const errorData = await response.json(); // Assuming the backend sends a JSON response with an error message
+                alert(`Error: ${errorData.message}`); // Display the error message from the backend
+                setIsLoading(false); // Stop loading since we've handled the error
+                return; // Exit the function early to avoid further processing
+            }
 
             const data = await response.json();
             setResults(data);
             setShowResult(true);
         } catch (error) {
             console.error('Error submitting form:', error);
+        }finally {
+          setIsLoading(false); // Stop loading regardless of the outcome
         }
     };
 
@@ -61,7 +69,7 @@ function Manual() {
       return;
     }
     
-    // Construct the content for the text file
+   
     let content = `${results.maxReward}\n`;
     content += results.bestPath.map(tokenInfo => tokenInfo.value).join(" ") + "\n";
     results.bestPath.forEach((tokenInfo, index) => {
@@ -69,27 +77,32 @@ function Manual() {
     });
     content += `\n${results.executionTime} ms\n`;
 
-    // Convert the content to a Blob object
+
     const blob = new Blob([content], { type: 'text/plain' });
 
-    // Create a URL for the Blob object
+
     const fileURL = URL.createObjectURL(blob);
 
-    // Create a temporary anchor element
+ 
     const tempLink = document.createElement('a');
     tempLink.href = fileURL;
-    tempLink.setAttribute('download', 'results.txt'); // Specify the filename for download
-    document.body.appendChild(tempLink); // Append to the body (required for Firefox)
+    tempLink.setAttribute('download', 'results.txt'); 
+    document.body.appendChild(tempLink);
 
-    // Programmatically click the anchor to trigger the download
+   
     tempLink.click();
 
-    // Clean up by removing the temporary link and revoking the Blob URL
+    
     document.body.removeChild(tempLink);
     URL.revokeObjectURL(fileURL);
   };
   return (
     <div className='w-screen h-screen flex flex-col items-center  text-[#d0ed57] '>
+      {isLoading && (
+        <div className="fixed w-20 h-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-5 rounded-lg flex flex-col items-center z-50">
+          <p>Loading...</p>
+        </div>
+      )}
         <div className={`flex flex-col items-center w-full h-full ${showResult ? 'filter blur-sm' : ''}`}>
             <div className=" text-6xl font-sans font-bold text-shadow mt-20" >
             Cyberpunk 2077 Breach Protocol
@@ -144,7 +157,7 @@ function Manual() {
         {showResult && (
         <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#111] text-white p-5 rounded-lg flex flex-col items-center z-50 max-w-4xl max-h-[80vh] overflow-auto w-2/3 h-2/3">
           <h2 className="text-xl font-bold w-full  bg-[#d0ed57] text-black text-center">Results:</h2>
-          <div className='flex flex-row justify-between w-2/3'>
+          <div className='flex flex-row justify-between w-2/3 gap-5 flex-wrap'>
             <div className="my-5">
               <h3 className="text-lg font-semibold">Matrix:</h3>
               {renderMatrix(results.data.matrix)}
