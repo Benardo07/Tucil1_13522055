@@ -173,12 +173,18 @@ function Manual() {
             </div>
           </div>
           <div className='flex flex-row justity-between w-2/3'>
-            <div className="my-5 w-2/3">
-              <h3 className="text-lg font-semibold">Best Path:</h3>
-              <div>
-                {results.bestPath.map(tokenInfo => tokenInfo.value).join(" ")}
+          {results.maxReward > 0 ? (
+            <div className='flex flex-row justify-between w-2/3'>
+              <div className="my-5 w-2/3">
+                <h3 className="text-lg font-semibold">Best Path:</h3>
+                <div>{results.bestPath.map(tokenInfo => tokenInfo.value).join(" ")}</div>
               </div>
             </div>
+          ) : (
+            <div className="my-5 w-full text-center">
+              <h3 className="text-lg font-semibold">No Solution</h3>
+            </div>
+          )}
             <div className="my-5">
               <h3 className="text-lg font-semibold">Max Reward:</h3>
               <pre className="whitespace-pre-wrap">{results.maxReward}</pre>

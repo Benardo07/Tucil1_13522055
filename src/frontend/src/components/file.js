@@ -187,10 +187,6 @@ function File() {
                 <h3 className="text-lg font-semibold">Best Path:</h3>
                 <div>{results.bestPath.map(tokenInfo => tokenInfo.value).join(" ")}</div>
               </div>
-              <div className="my-5">
-                <h3 className="text-lg font-semibold">Max Reward:</h3>
-                <pre className="whitespace-pre-wrap">{results.maxReward}</pre>
-              </div>
             </div>
           ) : (
             <div className="my-5 w-full text-center">

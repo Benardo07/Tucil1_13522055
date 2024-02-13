@@ -180,8 +180,7 @@ app.post('/solve',upload.none(), async (req, res) => {
   if (typeof token === 'string') {
     token = token.split(' ');
   }
-  console.log(uniqueToken);
-  console.log(token);
+
   // Validate input
   if (!uniqueToken || !token || !bufferSize || !matrixHeight || !matrixWidth || !sequenceSize || !maxSequence) {
     return res.status(400).json({ message: "All fields are required" });
@@ -202,15 +201,15 @@ app.post('/solve',upload.none(), async (req, res) => {
       isNaN(uniqueToken) || uniqueToken <= 0) {
     return res.status(400).json({ message: "Numeric fields must be greater than 0 " });
   }
-  console.log(token.length);
+
   if (token.length === 0 || token.length !== uniqueToken) {
     return res.status(400).json({ message: "Token array size does not match the number of unique tokens specified" });
   }
   if (!token.every(t => typeof t === 'string' && t.length === 2)) {
     return res.status(400).json({ message: "Each token must be a string containing exactly two characters" });
   }
-  if (bufferSize < 2) {
-    return res.status(400).json({ message: "Buffer size must be at least 2" });
+  if (bufferSize < 1) {
+    return res.status(400).json({ message: "Buffer size must be at least 1" });
   }
   if (maxSequence < 2) {
     return res.status(400).json({ message: "Max sequence size must be at least 2" });
